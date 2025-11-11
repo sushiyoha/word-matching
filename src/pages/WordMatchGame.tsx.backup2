@@ -1,0 +1,718 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Play, 
+  RotateCcw, 
+  Trophy, 
+  Clock, 
+  Target, 
+  RefreshCw,
+  Plus,
+  Minus,
+  Settings2,
+  ArrowLeft,
+  Crown,
+  Medal
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { wordLibraryApi, wordPairApi, gameRecordApi } from '@/db/api';
+import type { WordLibrary, WordPair, GameCard, GameState } from '@/types';
+import GameBoard from '@/components/game/GameBoard';
+import Leaderboard from '@/components/game/Leaderboard';
+
+const WordMatchGame: React.FC = () => {
+  const [libraries, setLibraries] = useState<WordLibrary[]>([]);
+  const [selectedLibrary, setSelectedLibrary] = useState<WordLibrary | null>(null);
+  const [wordPairs, setWordPairs] = useState<WordPair[]>([]);
+  const [currentWords, setCurrentWords] = useState<WordPair[]>([]);
+  const [wordCount, setWordCount] = useState(10);
+  const [playerName, setPlayerName] = useState('');
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showAddWords, setShowAddWords] = useState(false);
+  const [leaderboardRefreshKey, setLeaderboardRefreshKey] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [userRank, setUserRank] = useState<number | null>(null);
+  const [firstPlaceRecord, setFirstPlaceRecord] = useState<{ playerName: string; time: number; steps: number } | null>(null);
+  const [gameCount, setGameCount] = useState(0);
+  
+  const [gameState, setGameState] = useState<GameState>({
+    cards: [],
+    selectedCards: [],
+    matchedPairs: 0,
+    steps: 0,
+    startTime: null,
+    endTime: null,
+    isGameStarted: false,
+    isGameCompleted: false
+  });
+
+  // 加载词库
+  useEffect(() => {
+    const loadLibraries = async () => {
+      const libs = await wordLibraryApi.getAll();
+      setLibraries(libs);
+      
+      // 默认选择第一个词库
+      if (libs.length > 0) {
+        const defaultLib = libs.find(lib => lib.is_default) || libs[0];
+        setSelectedLibrary(defaultLib);
+      }
+    };
+    
+    loadLibraries();
+  }, []);
+
+  // 游戏计时器
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (gameState.isGameStarted && !gameState.isGameCompleted && gameState.startTime) {
+      interval = setInterval(() => {
+        setCurrentTime(Math.floor((Date.now() - gameState.startTime!) / 1000));
+      }, 1000);
+    } else {
+      setCurrentTime(0);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [gameState.isGameStarted, gameState.isGameCompleted, gameState.startTime]);
+
+  // 加载选中词库的单词对
+  useEffect(() => {
+    if (selectedLibrary) {
+      const loadWordPairs = async () => {
+        const pairs = await wordPairApi.getByLibraryId(selectedLibrary.id);
+        setWordPairs(pairs);
+        // 默认显示前10个单词
+        refreshWords(pairs, wordCount);
+      };
+      
+      loadWordPairs();
+    }
+  }, [selectedLibrary, wordCount]);
+
+  // 从localStorage获取玩家名称
+  useEffect(() => {
+    const savedPlayerName = localStorage.getItem('wordMatchGame_playerName');
+    if (savedPlayerName) {
+      setPlayerName(savedPlayerName);
+    }
+  }, []);
+
+  // 保存玩家名称到localStorage
+  const savePlayerName = useCallback((name: string) => {
+    setPlayerName(name);
+    localStorage.setItem('wordMatchGame_playerName', name);
+  }, []);
+
+  // 刷新单词
+  const refreshWords = useCallback((pairs: WordPair[] = wordPairs, count: number = wordCount) => {
+    if (pairs.length === 0) return;
+    
+    // 随机选择指定数量的单词对
+    const shuffled = [...pairs].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(count, pairs.length));
+    setCurrentWords(selected);
+  }, [wordPairs, wordCount]);
+
+  // 创建游戏卡片
+  const createGameCards = useCallback((pairs: WordPair[], showContent: boolean = false): GameCard[] => {
+    // 创建卡片数组
+    const cards: GameCard[] = [];
+    
+    pairs.forEach((pair, index) => {
+      const pairId = `pair-${index}`;
+      
+      // 英文卡片
+      cards.push({
+        id: `${pairId}-en`,
+        content: pair.english_word,
+        type: 'english',
+        pairId,
+        isFlipped: showContent,
+        isMatched: false
+      });
+      
+      // 中文卡片
+      cards.push({
+        id: `${pairId}-zh`,
+        content: pair.chinese_translation,
+        type: 'chinese',
+        pairId,
+        isFlipped: showContent,
+        isMatched: false
+      });
+    });
+
+    // 打乱卡片顺序
+    return cards.sort(() => Math.random() - 0.5);
+  }, []);
+
+  // 开始游戏
+  const startGame = useCallback(() => {
+    if (!selectedLibrary || currentWords.length === 0) {
+      toast.error('请先刷新单词');
+      return;
+    }
+
+    // 先创建显示正面内容的卡片
+    const cardsWithContent = createGameCards(currentWords, true);
+    
+    setGameState({
+      cards: cardsWithContent,
+      selectedCards: [],
+      matchedPairs: 0,
+      steps: 0,
+      startTime: Date.now(),
+      endTime: null,
+      isGameStarted: true,
+      isGameCompleted: false
+    });
+
+    // 0.5秒后将所有卡片翻转到背面
+    setTimeout(() => {
+      setGameState(prevState => ({
+        ...prevState,
+        cards: prevState.cards.map(card => ({
+          ...card,
+          isFlipped: false
+        }))
+      }));
+    }, 500);
+  }, [selectedLibrary, currentWords, createGameCards]);
+
+  // 重置游戏
+  const resetGame = useCallback(() => {
+    setGameState({
+      cards: [],
+      selectedCards: [],
+      matchedPairs: 0,
+      steps: 0,
+      startTime: null,
+      endTime: null,
+      isGameStarted: false,
+      isGameCompleted: false
+    });
+    // 清除排名信息
+    setUserRank(null);
+    setFirstPlaceRecord(null);
+  }, []);
+
+  // 重新开始游戏（保持当前设置）
+  const restartGame = useCallback(() => {
+    if (!selectedLibrary || currentWords.length === 0) {
+      toast.error('请先选择词库并确保有单词');
+      return;
+    }
+
+    // 重新创建游戏卡片并开始游戏
+    const cardsWithContent = createGameCards(currentWords, true);
+    
+    setGameState({
+      cards: cardsWithContent,
+      selectedCards: [],
+      matchedPairs: 0,
+      steps: 0,
+      startTime: Date.now(),
+      endTime: null,
+      isGameStarted: true,
+      isGameCompleted: false
+    });
+    
+    // 清除排名信息
+    setUserRank(null);
+    setFirstPlaceRecord(null);
+
+    toast.success('游戏重新开始！');
+
+    // 0.5秒后将所有卡片翻转到背面
+    setTimeout(() => {
+      setGameState(prevState => ({
+        ...prevState,
+        cards: prevState.cards.map(card => ({
+          ...card,
+          isFlipped: false
+        }))
+      }));
+    }, 500);
+  }, [selectedLibrary, currentWords, createGameCards]);
+
+  // 处理卡片点击
+  const handleCardClick = useCallback((cardId: string) => {
+    setGameState(prevState => {
+      const { cards, selectedCards, steps, matchedPairs } = prevState;
+      
+      // 如果已经选择了两张卡片，或者卡片已经被匹配，则忽略点击
+      if (selectedCards.length >= 2) return prevState;
+      
+      const clickedCard = cards.find(card => card.id === cardId);
+      if (!clickedCard || clickedCard.isMatched || clickedCard.isFlipped) {
+        return prevState;
+      }
+
+      // 翻转卡片
+      const updatedCards = cards.map(card =>
+        card.id === cardId ? { ...card, isFlipped: true } : card
+      );
+
+      const newSelectedCards = [...selectedCards, clickedCard];
+
+      // 如果选择了两张卡片，检查是否匹配
+      if (newSelectedCards.length === 2) {
+        const [firstCard, secondCard] = newSelectedCards;
+        const isMatch = firstCard.pairId === secondCard.pairId;
+
+        if (isMatch) {
+          // 匹配成功
+          const finalCards = updatedCards.map(card =>
+            card.pairId === firstCard.pairId 
+              ? { ...card, isMatched: true }
+              : card
+          );
+
+          const newMatchedPairs = matchedPairs + 1;
+          const newSteps = steps + 1;
+          const isGameCompleted = newMatchedPairs === currentWords.length;
+
+          return {
+            ...prevState,
+            cards: finalCards,
+            selectedCards: [],
+            matchedPairs: newMatchedPairs,
+            steps: newSteps,
+            isGameCompleted,
+            endTime: isGameCompleted ? Date.now() : null
+          };
+        } else {
+          // 匹配失败，延迟翻回卡片
+          setTimeout(() => {
+            setGameState(currentState => ({
+              ...currentState,
+              cards: currentState.cards.map(card =>
+                (card.id === firstCard.id || card.id === secondCard.id)
+                  ? { ...card, isFlipped: false }
+                  : card
+              ),
+              selectedCards: []
+            }));
+          }, 500);
+
+          return {
+            ...prevState,
+            cards: updatedCards,
+            selectedCards: newSelectedCards,
+            steps: steps + 1
+          };
+        }
+      }
+
+      return {
+        ...prevState,
+        cards: updatedCards,
+        selectedCards: newSelectedCards
+      };
+    });
+  }, [currentWords.length]);
+
+  // 游戏完成处理
+  useEffect(() => {
+    if (gameState.isGameCompleted && gameState.startTime && gameState.endTime && selectedLibrary) {
+      const timeSeconds = Math.floor((gameState.endTime - gameState.startTime) / 1000);
+      
+      const saveRecordAndGetRanking = async () => {
+        if (playerName.trim()) {
+          try {
+            // 先获取用户的历史最佳记录
+            const existingRecords = await gameRecordApi.getLeaderboard(selectedLibrary.id, currentWords.length);
+            const userRecords = existingRecords.filter(record => record.player_name === playerName.trim());
+            
+            // 计算游戏次数（包括即将保存的这一次）
+            const newGameCount = userRecords.length + 1;
+            setGameCount(newGameCount);
+            
+            let isNewRecord = false;
+            if (userRecords.length > 0) {
+              // 用户有历史记录，检查是否刷新了记录
+              const bestUserRecord = userRecords[0]; // 排行榜已按时间排序，第一个就是最佳记录
+              
+              // 比较新记录是否更好（时间更短，或时间相同但步数更少）
+              if (timeSeconds < bestUserRecord.time_seconds || 
+                  (timeSeconds === bestUserRecord.time_seconds && gameState.steps < bestUserRecord.steps)) {
+                isNewRecord = true;
+              }
+            } else {
+              // 用户第一次游戏，也算新记录
+              isNewRecord = true;
+            }
+            
+            // 更新游戏次数
+            // 保存新记录
+            await gameRecordApi.create({
+              player_name: playerName.trim(),
+              library_id: selectedLibrary.id,
+              word_count: currentWords.length,
+              steps: gameState.steps,
+              time_seconds: timeSeconds
+            });
+            
+            // 更新游戏次数
+            
+            // 更新游戏次数
+            
+            // 游戏记录保存成功后，获取排名信息
+            await getRankingInfo();
+            
+            // 触发排行榜刷新
+            setLeaderboardRefreshKey(Date.now());
+            
+            // 根据是否刷新记录显示不同的提示
+            if (isNewRecord && userRecords.length > 0) {
+              toast.success(`🎉 重复带来天赋，您又刷新记录！用时 ${timeSeconds} 秒，共 ${gameState.steps} 步 (第${newGameCount}次游戏)`);
+            } else {
+              toast.success(`恭喜完成游戏！用时 ${timeSeconds} 秒，共 ${gameState.steps} 步`);
+            }
+          } catch (error) {
+            console.error('保存游戏记录失败:', error);
+            toast.error('保存游戏记录失败');
+          }
+        } else {
+          // 即使没有保存记录，也获取排名信息
+          await getRankingInfo();
+          toast.success(`恭喜完成游戏！用时 ${timeSeconds} 秒，共 ${gameState.steps} 步`);
+        }
+      };
+
+      saveRecordAndGetRanking();
+    }
+  }, [gameState.isGameCompleted, gameState.startTime, gameState.endTime, gameState.steps, selectedLibrary, currentWords.length, playerName]);
+
+  // 获取排名信息
+  const getRankingInfo = async () => {
+    if (!selectedLibrary) return;
+    
+    try {
+      const records = await gameRecordApi.getLeaderboard(selectedLibrary.id, currentWords.length);
+      
+      if (records.length > 0) {
+        // 获取第一名信息
+        const firstPlace = records[0];
+        setFirstPlaceRecord({
+          playerName: firstPlace.player_name,
+          time: firstPlace.time_seconds,
+          steps: firstPlace.steps
+        });
+        
+        // 如果用户有名字，查找用户的最佳排名
+        if (playerName.trim()) {
+          // 找到用户的所有记录中最好的一个
+          const userRecords = records.filter(record => record.player_name === playerName.trim());
+          if (userRecords.length > 0) {
+            // 用户的最佳记录就是排行榜中的第一个用户记录
+            const bestUserRecord = userRecords[0];
+            const userRankIndex = records.findIndex(record => 
+              record.player_name === bestUserRecord.player_name && 
+              record.time_seconds === bestUserRecord.time_seconds &&
+              record.steps === bestUserRecord.steps
+            );
+            setUserRank(userRankIndex + 1);
+          } else {
+            setUserRank(null);
+          }
+        } else {
+          setUserRank(null);
+        }
+      } else {
+        setFirstPlaceRecord(null);
+        setUserRank(null);
+      }
+    } catch (error) {
+      console.error("获取排名信息失败:", error);
+      setFirstPlaceRecord(null);
+      setUserRank(null);
+    }
+  };
+
+  // 监听单词数量变化，自动刷新单词
+  useEffect(() => {
+    if (wordPairs.length > 0 && !gameState.isGameStarted) {
+      refreshWords(wordPairs, wordCount);
+    }
+  }, [wordCount, wordPairs, gameState.isGameStarted, refreshWords]);
+
+  // 计算游戏进度
+  const progress = gameState.isGameStarted 
+    ? (gameState.matchedPairs / currentWords.length) * 100 
+    : 0;
+
+  // 计算游戏时间
+  const gameTime = gameState.startTime 
+    ? Math.floor(((gameState.endTime || Date.now()) - gameState.startTime) / 1000)
+    : 0;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* 标题 */}
+        <div className="text-center">
+
+        </div>
+
+        {/* 游戏未开始时显示单词列表 */}
+        {!gameState.isGameStarted && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>当前单词</span>
+                <div className="flex items-center gap-2">
+                  {!showAddWords ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddWords(true)}
+                      className="flex items-center gap-1"
+                    >
+                      <Plus className="w-4 h-4" />
+                      加词模式
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setWordCount(Math.max(10, wordCount - 2))}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <Badge variant="outline" className="min-w-[3rem] text-center">
+                        {wordCount}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setWordCount(Math.min(wordPairs.length, wordCount + 2))}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddWords(false)}
+                      >
+                        完成
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {currentWords.length > 0 ? (
+                <div className="grid grid-cols-4 gap-1.5 mb-6">
+                  {currentWords.map((pair, index) => [
+                    // 英文卡牌
+                    <div
+                      key={`${pair.id}-en`}
+                      className="p-1.5 bg-blue-50 rounded-md border border-blue-200 text-center aspect-square flex items-center justify-center"
+                    >
+                      <span className="font-medium text-blue-700 text-xs leading-tight">
+                        {pair.english_word}
+                      </span>
+                    </div>,
+                    // 中文卡牌
+                    <div
+                      key={`${pair.id}-zh`}
+                      className="p-1.5 bg-slate-50 rounded-md border border-slate-200 text-center aspect-square flex items-center justify-center"
+                    >
+                      <span className="text-slate-700 text-xs leading-tight">
+                        {pair.chinese_translation}
+                      </span>
+                    </div>
+                  ]).flat()}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  暂无单词，请刷新或检查词库
+                </div>
+              )}
+
+              <Separator className="my-4" />
+
+              {/* 操作按钮 */}
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Button
+                  onClick={() => refreshWords()}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  disabled={wordPairs.length === 0}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  刷新单词
+                </Button>
+                
+                <Button
+                  onClick={startGame}
+                  className="flex items-center gap-2"
+                  disabled={currentWords.length === 0}
+                >
+                  <Play className="w-4 h-4" />
+                  开始游戏
+                </Button>
+
+                <Link to="/settings">
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Settings2 className="w-4 h-4" />
+                    更多设置
+                  </Button>
+                </Link>
+
+                <Link to="/test-settings">
+
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 游戏进行中的统计面板 */}
+        {gameState.isGameStarted && (
+          <Card className="mt-1">
+            <CardContent className="py-2 px-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                {/* 游戏统计信息 */}
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <Target className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="text-sm font-medium">{Math.round(progress)}%</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                    <span className="text-sm font-medium">{gameState.steps}步</span>
+                  </div>
+                  {gameState.startTime && (
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-green-600" />
+                      <span className="text-sm font-medium">{gameTime}秒</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 游戏控制按钮 */}
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={restartGame}
+                    className="flex items-center gap-1 h-7 px-2 text-xs"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    重新开始
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetGame}
+                    className="flex items-center gap-1 h-7 px-2 text-xs"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    返回
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 游戏区域 */}
+        {gameState.isGameStarted && (
+          <GameBoard
+            cards={gameState.cards}
+            onCardClick={handleCardClick}
+            isCompleted={gameState.isGameCompleted}
+          />
+        )}
+
+        {/* 游戏完成提示 */}
+        {gameState.isGameCompleted && (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+
+                <div className="text-green-600">
+                  用时 {gameTime} 秒，共 {gameState.steps} 步
+                </div>
+                {/* 排名信息 */}
+                {(userRank || firstPlaceRecord) && (
+                  <div className="bg-white rounded-lg p-4 space-y-3 border border-green-100">
+                    <div className="text-sm font-medium text-gray-700 mb-2">排名信息</div>
+                    
+                    {/* 第一名信息 */}
+                    {firstPlaceRecord && (
+                      <div className="flex items-center justify-between p-2 bg-yellow-50 rounded-md border border-yellow-200">
+                        <div className="flex items-center gap-2">
+                          <Crown className="w-4 h-4 text-yellow-600" />
+                          <span className="text-sm font-medium text-yellow-800">第一名</span>
+                        </div>
+                        <div className="text-sm text-yellow-700">
+                          {firstPlaceRecord.playerName} - {firstPlaceRecord.time}秒 {firstPlaceRecord.steps}步
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 用户排名 */}
+                    {userRank && playerName.trim() && (
+                      <div className="flex items-center justify-between p-2 bg-blue-50 rounded-md border border-blue-200">
+                        <div className="flex items-center gap-2">
+                          <Medal className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-800">您的排名</span>
+                        </div>
+                        <div className="text-sm text-blue-700">
+                          第 {userRank} 名
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 未登录提示 */}
+                    {!playerName.trim() && (
+                      <div className="text-xs text-gray-500 text-center">
+                        设置玩家名称后可查看个人排名
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={resetGame} className="flex items-center gap-2">
+                    <Play className="w-4 h-4" />
+                    再玩一局
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+      
+      {/* 排行榜对话框 */}
+      <Leaderboard
+        open={showLeaderboard}
+        onOpenChange={setShowLeaderboard}
+        selectedLibrary={selectedLibrary}
+        wordCount={currentWords.length}
+        refreshKey={leaderboardRefreshKey}
+      />
+    </div>
+  );
+};
+
+export default WordMatchGame;
