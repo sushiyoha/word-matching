@@ -19,6 +19,18 @@ CREATE TABLE IF NOT EXISTS word_pairs (
   created_at timestamptz DEFAULT now()
 );
 
+
+
+-- 创建词库关卡表
+CREATE TABLE IF NOT EXISTS word_library_levels (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  library_id uuid REFERENCES word_libraries(id) ON DELETE CASCADE,
+  level_name text NOT NULL,
+  level_order integer NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+
 -- 创建游戏记录表
 CREATE TABLE IF NOT EXISTS game_records (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,14 +43,6 @@ CREATE TABLE IF NOT EXISTS game_records (
   completed_at timestamptz DEFAULT now()
 );
 
--- 创建词库关卡表
-CREATE TABLE IF NOT EXISTS word_library_levels (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  library_id uuid REFERENCES word_libraries(id) ON DELETE CASCADE,
-  level_name text NOT NULL,
-  level_order integer NOT NULL,
-  created_at timestamptz DEFAULT now()
-);
 
 -- 创建TTS音频表
 CREATE TABLE IF NOT EXISTS tts_audio (
@@ -137,3 +141,18 @@ WHERE lang_a IS NULL;
 UPDATE word_pairs
 SET lang_b = 'zh-CN-XiaoxiaoNeural'
 WHERE lang_b IS NULL;
+
+
+-- 允许匿名用户上传文件
+CREATE POLICY "Allow public uploads"
+ON storage.objects
+FOR INSERT
+TO public
+WITH CHECK (bucket_id = 'tts');
+
+-- 允许匿名用户读取文件
+CREATE POLICY "Allow public read"
+ON storage.objects
+FOR SELECT
+TO public
+USING (bucket_id = 'tts');
