@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import traceback # 导入 traceback 模块以获取更详细的错误堆栈
+import socket
+import asyncio
 
 load_dotenv()
 
@@ -38,6 +40,90 @@ VALID_VOICES = [
     "vi-VN-HoaiMyNeural", "hi-IN-AaravNeural",
 ]
 # ... (其他辅助函数和端点保持不变)
+
+
+
+# ===================================================================
+# ===================== 网络诊断调试接口 ==========================
+# ===================================================================
+@app.get("/debug-network/")
+async def debug_network():
+    """
+    一个用于诊断 Render 服务器出站网络连接的端点。
+    它会执行三个级别的测试，并将结果以 JSON 格式返回。
+    """
+    results = {}
+    target_host = "speech.platform.bing.com"
+    target_port = 443  # HTTPS 端口
+
+    # --- 测试 1: DNS 解析 ---
+    # 目的：检查服务器能否将域名解析成 IP 地址。这是网络连接的第一步。
+    try:
+        ip_address = socket.gethostbyname(target_host)
+        results["dns_check"] = {
+            "status": "成功 (SUCCESS)",
+            "detail": f"域名 {target_host} 成功解析到 IP 地址: {ip_address}"
+        }
+    except Exception as e:
+        results["dns_check"] = {
+            "status": "失败 (FAILED)",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+    # --- 测试 2: TCP 连接 ---
+    # 目的：检查服务器能否与目标主机的 443 端口建立基本的 TCP 连接。
+    # 这能有效测试防火墙或网络策略问题。
+    try:
+        with socket.create_connection((target_host, target_port), timeout=10) as sock:
+            results["tcp_connection_check"] = {
+                "status": "成功 (SUCCESS)",
+                "detail": f"成功建立到 {target_host}:{target_port} 的 TCP 连接。"
+            }
+    except Exception as e:
+        results["tcp_connection_check"] = {
+            "status": "失败 (FAILED)",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+    # --- 测试 3: 完整的 edge-tts 请求 ---
+    # 目的：直接运行导致问题的代码，看看在隔离环境下是否能成功。
+    temp_file = "/tmp/debug_tts_output.mp3"
+    try:
+        communicate = edge_tts.Communicate("This is a network test.", "en-US-AriaNeural")
+        await communicate.save(temp_file)
+        # 检查文件是否真的被创建
+        if os.path.exists(temp_file):
+            results["edge_tts_check"] = {
+                "status": "成功 (SUCCESS)",
+                "detail": f"edge-tts 成功生成并保存了音频文件到 {temp_file}。"
+            }
+            os.remove(temp_file) # 清理测试文件
+        else:
+            results["edge_tts_check"] = {
+                "status": "失败 (FAILED)",
+                "error": "communicate.save() 执行完毕但未在磁盘上找到文件。"
+            }
+    except Exception as e:
+        results["edge_tts_check"] = {
+            "status": "失败 (FAILED)",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+        # 如果测试失败了，也尝试清理一下可能产生的0字节文件
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
+    return JSONResponse(content=results)
+
+# ===================================================================
+# ===================== 调试接口结束 ==============================
+# ===================================================================
+
+
+
+
 
 @app.post("/tts/")
 async def tts(request: Request):
