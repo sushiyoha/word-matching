@@ -22,23 +22,20 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 关键修改在这里！我们让 GitHub 自己安装依赖！
+      # ✨ 终极修正！我们不再用虚拟环境，而是把工具直接装在代码旁边！✨
       - name: Install dependencies
         working-directory: ./backend # 告诉它去 backend 文件夹里工作
         run: |
-          python -m venv antenv
-          source antenv/bin/activate
           pip install --upgrade pip
-          pip install -r requirements.txt
+          # 这行命令的意思是：把所有工具，全都安装到当前这个 backend 文件夹里！
+          pip install -r requirements.txt -t . 
 
-      # 关键修改在这里！我们只上传打包好的东西！
+      # 我们现在只上传 backend 文件夹，里面已经包含了代码和所有工具！
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            ./backend # 只上传 backend 文件夹
-            !./backend/antenv # 但不上传虚拟环境文件夹
+          path: ./backend
 
   deploy:
     runs-on: ubuntu-latest
@@ -62,6 +59,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2C9A4FAC20874470896F2A6687028520 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_1B08DC1A9ACA4FB9945E035EE77D4DD7 }}
 
+      # 关键！我们告诉 Azure，你的应用代码和工具都在这里，你不需要再自己构建了！
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -69,3 +67,6 @@ jobs:
           app-name: 'sushiyoha-wordmatching-rg'
           slot-name: 'Production'
           package: .
+          # 我们甚至可以显式地告诉 Oryx 机器人：“你快去休假吧！这里没你的事了！”
+          # 虽然下面这行不是必须的，但加上更保险！
+          build-remote: false
