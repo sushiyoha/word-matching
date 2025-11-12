@@ -11,7 +11,7 @@ Have fun!<br>
 
 # 怎么体验？How to play
 请直接点击这个链接，然后稍作等待（因为数据库调用好慢啊）！ <br>Click this!<br>
- https://sushiyoha.github.io/Wordie-Cardie/
+ [https://sushiyoha.github.io/Wordie-Cardie/](https://sushiyoha.github.io/word-matching/)
 
 # 未来功能 What to wait
 1. 排行榜 Competetion （由于cursor已达限额+gemini cli登录不上，暂时还没修复此功能）<br>
