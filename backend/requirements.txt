@@ -3,3 +3,4 @@ uvicorn
 gunicorn
 edge_tts
 supabase
+python-dotenv
