@@ -60,18 +60,19 @@ export const fetchTTS = async (text: string, lang: string) => {
     try {
       // 如果没有传 lang，默认英语 Eric
       const voice = lang || "en-US-EricNeural";
+
       
-      // 生成唯一的 cache key，确保缓存的是同一个文本和语言的组合
-      const cacheKey = `${voice}-${text}`;
+      // // 生成唯一的 cache key，确保缓存的是同一个文本和语言的组合
+      // const cacheKey = `${voice}-${text}`;
       
-      // 检查缓存中是否已经有该语音的 URL
-      const cachedUrl = localStorage.getItem(cacheKey);
-      if (cachedUrl) {
-        // 如果缓存有，直接播放
-        const audio = new Audio(cachedUrl);
-        audio.play();
-        return;
-      }
+      // // 检查缓存中是否已经有该语音的 URL
+      // const cachedUrl = localStorage.getItem(cacheKey);
+      // if (cachedUrl) {
+      //   // 如果缓存有，直接播放
+      //   const audio = new Audio(cachedUrl);
+      //   audio.play();
+      //   return;
+      //}
   
       const formData = new FormData();
       formData.append("text", text);
@@ -94,7 +95,7 @@ export const fetchTTS = async (text: string, lang: string) => {
       }
   
       // 缓存返回的 URL
-      localStorage.setItem(cacheKey, data.url);
+      // localStorage.setItem(cacheKey, data.url);
   
       // 播放语音
       const audio = new Audio(data.url);
