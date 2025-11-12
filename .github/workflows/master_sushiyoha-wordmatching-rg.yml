@@ -20,13 +20,25 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # 建议使用 3.11，因为它是稳定版哦
+          python-version: '3.11'
 
+      # 关键修改在这里！我们让 GitHub 自己安装依赖！
+      - name: Install dependencies
+        working-directory: ./backend # 告诉它去 backend 文件夹里工作
+        run: |
+          python -m venv antenv
+          source antenv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 关键修改在这里！我们只上传打包好的东西！
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: .
+          path: |
+            ./backend # 只上传 backend 文件夹
+            !./backend/antenv # 但不上传虚拟环境文件夹
 
   deploy:
     runs-on: ubuntu-latest
@@ -35,7 +47,7 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
+      id-token: write
 
     steps:
       - name: Download artifact from build job
@@ -56,4 +68,4 @@ jobs:
         with:
           app-name: 'sushiyoha-wordmatching-rg'
           slot-name: 'Production'
-          package: . # <-- 修正就在这里！
+          package: .
