@@ -19,7 +19,7 @@ Have fun!<br>
 
 
 
-# 免责声明：底下的内容都素AI生成的，跟作者无关！You can ignore informations below.
+# 免责声明：底下的内容都素AI生成的，跟yoha无关！You can ignore informations below.
 
 
 ## 🎯 游戏玩法
