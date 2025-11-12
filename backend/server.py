@@ -6,14 +6,31 @@ import uuid, os
 from supabase import create_client, Client
 import urllib.parse
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
 app = FastAPI()
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有域访问（你可以限制为特定域）
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_headers=["*"],  # 允许所有请求头
+)
+
+
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+@app.get("/health/")
+def health_check():
+    return {"status": "ok"}
+
 
 VALID_VOICES = [
     "en-US-EricNeural","zh-CN-XiaoxiaoNeural","ja-JP-DaichiNeural","ko-KR-BongJinNeural",
@@ -25,6 +42,8 @@ VALID_VOICES = [
 def sanitize_filename(text: str):
     # URL 编码所有特殊字符
     return urllib.parse.quote_plus(text)
+
+
 
 @app.get("/")
 def hello():
@@ -52,15 +71,19 @@ async def tts(text: str = Form(...), lang: str = Form("en-US-EricNeural")):
     # 文件不存在则生成
     try:
         communicate = edge_tts.Communicate(text, voice=lang)
+        print(f"正在生成音频: {filename}")
         await communicate.save(filename)
+        print(f"成功生成音频: {filename}")
     except Exception as e:
         return JSONResponse({"error": f"TTS 生成失败: {e}"}, status_code=500)
 
     # 上传
     try:
         with open(filename, "rb") as f:
+            print(f"上传文件到 Supabase: {storage_path}")
             supabase.storage.from_("tts").upload(storage_path, f, {"cacheControl": "3600", "upsert": "true"})
         public_url = supabase.storage.from_("tts").get_public_url(storage_path)
+        print(f"文件上传成功: {public_url}")
     except Exception as e:
         os.remove(filename)
         return JSONResponse({"error": f"上传 Supabase 失败: {e}"}, status_code=500)

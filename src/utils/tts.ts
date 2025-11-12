@@ -77,7 +77,7 @@ export const fetchTTS = async (text: string, lang: string) => {
       formData.append("text", text);
       formData.append("lang", voice);
   
-      const response = await fetch("http://127.0.0.1:8000/tts/", {
+      const response = await fetch("https://word-matching.onrender.com/tts/", {
         method: "POST",
         body: formData,
       });
