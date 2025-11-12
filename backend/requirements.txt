@@ -4,3 +4,4 @@ gunicorn
 edge_tts
 supabase
 python-dotenv
+python-multipart
