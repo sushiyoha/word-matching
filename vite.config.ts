@@ -7,7 +7,7 @@ import { miaodaDevPlugin } from "miaoda-sc-plugin";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/Wordie-Cardie/',
+  base: '/word-matching/',
   plugins: [react(), svgr({
       svgrOptions: {
         icon: true, exportType: 'named', namedExport: 'ReactComponent', }, }), miaodaDevPlugin()],
