@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 gunicorn
-edge-tts
+edge_tts
 supabase
 python-dotenv
 python-multipart
