@@ -77,7 +77,7 @@ export const fetchTTS = async (text: string, lang: string) => {
       formData.append("text", text);
       formData.append("lang", voice);
   
-      const response = await fetch("https://avatars.githubusercontent.com/u/188033027?v=4/", {
+      const response = await fetch("http://127.0.0.1:8000/tts/", {
         method: "POST",
         body: formData,
       });
