@@ -24,6 +24,14 @@ jobs:
         with:
           python-version: '3.14'
 
+      - name: Upload artifact for deployment jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: . # 就上传整个项目
+
+      - name: 'Deploy to Azure Web App'
+
 
 
       # 🚫 Opting Out of Oryx Build
@@ -60,3 +68,4 @@ jobs:
           slot-name: 'Production'
 
           
+
