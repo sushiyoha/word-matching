@@ -1,7 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
 name: Build and deploy Python app to Azure Web App - sushiyoha-wordmatching-rg
 
 on:
@@ -22,20 +18,27 @@ jobs:
         with:
           python-version: '3.11'
 
-      # ✨ 终极修正！我们不再用虚拟环境，而是把工具直接装在代码旁边！✨
-      - name: Install dependencies
-        working-directory: ./backend # 告诉它去 backend 文件夹里工作
+      # ✨✨✨ 必胜战术：大搬家！✨✨✨
+      # 我们把 backend 文件夹里的所有东西，都复制到项目最外层（根目录）！
+      # 这样 Azure 一打开包裹，第一眼就能看到 requirements.txt！
+      - name: Move backend code to root
         run: |
-          pip install --upgrade pip
-          # 这行命令的意思是：把所有工具，全都安装到当前这个 backend 文件夹里！
-          pip install -r requirements.txt -t . 
+          cp -r backend/* .
+          # 这一步是为了确认搬家成功，给我们在日志里看一眼
+          ls -la 
 
-      # 我们现在只上传 backend 文件夹，里面已经包含了代码和所有工具！
+      # 打包！注意：我们现在直接打包当前目录 (.)
+      # 因为代码已经都在这里了！
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: ./backend
+          path: .
+          # 排除掉不需要的原始文件夹和git文件，保持包裹干净
+          exclude: |
+            backend/
+            .git/
+            .github/
 
   deploy:
     runs-on: ubuntu-latest
@@ -59,7 +62,8 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2C9A4FAC20874470896F2A6687028520 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_1B08DC1A9ACA4FB9945E035EE77D4DD7 }}
 
-      # 关键！我们告诉 Azure，你的应用代码和工具都在这里，你不需要再自己构建了！
+      # 让 Azure 自己的 Oryx 引擎来构建！
+      # 因为现在结构是标准的，它一定能认出来！
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -67,6 +71,3 @@ jobs:
           app-name: 'sushiyoha-wordmatching-rg'
           slot-name: 'Production'
           package: .
-          # 我们甚至可以显式地告诉 Oryx 机器人：“你快去休假吧！这里没你的事了！”
-          # 虽然下面这行不是必须的，但加上更保险！
-          build-remote: false
