@@ -156,3 +156,22 @@ ON storage.objects
 FOR SELECT
 TO public
 USING (bucket_id = 'tts');
+
+-- 创建用户档案表（Robin的朋友名册）
+CREATE TABLE IF NOT EXISTS user_profiles (
+  player_name text PRIMARY KEY,  -- 这是朋友的名字
+  total_steps integer DEFAULT 0, -- 累计走了多少步（Robin都记得！）
+  total_time_seconds integer DEFAULT 0, -- 累计陪了Robin多久
+  last_seen_at timestamptz DEFAULT now(), -- 上次见面是什么时候（用来判断是不是很久没见）
+  created_at timestamptz DEFAULT now() -- 第一次认识的时间
+);
+
+create or replace function update_user_stats(p_name text, steps_to_add int, time_to_add int)
+returns void as $$
+  update user_profiles
+  set
+    total_steps = total_steps + steps_to_add,
+    total_time_seconds = total_time_seconds + time_to_add,
+    last_seen_at = now()
+  where player_name = p_name;
+$$ language sql;

@@ -1,5 +1,80 @@
 import { supabase } from './supabase';
 import type { WordLibrary, WordPair, GameRecord, WordLibraryLevel } from '@/types';
+import type { UserProfile } from '@/types'; // 您可能需要在 types.ts 中定义 UserProfile 类型
+
+
+export const userProfileApi = {
+  // 获取或创建用户档案
+  async getOrCreate(playerName: string): Promise<UserProfile> {
+    // 尝试找到用户
+    let { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('player_name', playerName)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 表示没有找到记录，这是正常的
+      console.error('获取用户档案失败:', error);
+      throw error;
+    }
+
+    // 如果没找到，就创建一个新朋友！
+    if (!data) {
+      const { data: newData, error: insertError } = await supabase
+        .from('user_profiles')
+        .insert({ player_name: playerName })
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('创建用户档案失败:', insertError);
+        throw insertError;
+      }
+      return newData as UserProfile;
+    }
+    
+    return data as UserProfile;
+  },
+
+  // 更新累计步数和时间，并更新“上次见面时间”
+  async updateStats(
+    playerName: string, 
+    stepsToAdd: number, 
+    timeToAdd: number
+  ): Promise<UserProfile> {
+    const { data, error } = await supabase.rpc('update_user_stats', {
+      p_name: playerName,
+      steps_to_add: stepsToAdd,
+      time_to_add: timeToAdd
+    });
+
+    if (error) {
+      console.error('更新用户统计失败:', error);
+      throw error;
+    }
+    // rpc 返回的是一个数组，我们需要转换
+    const { data: updatedProfile, error: fetchError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('player_name', playerName)
+      .single();
+
+    if (fetchError) throw fetchError;
+    return updatedProfile as UserProfile;
+  },
+
+  // 仅仅更新“上次见面时间”（用户登录时调用）
+  async checkIn(playerName: string): Promise<void> {
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('player_name', playerName);
+
+    if (error) {
+      console.error('更新见面时间失败:', error);
+    }
+  }
+};
 
 // 词库相关API
 export const wordLibraryApi = {

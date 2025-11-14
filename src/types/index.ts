@@ -29,7 +29,7 @@ export interface WordPair {
   level_id?: string;
   english_word: string;
   chinese_translation: string;
-  lang_a?:string;//语言A的语言代码，如'en-UK'
+  lang_a?:string;//语言A的语言代码，如'zh-CN-XiaoxiaoNeural'
   lang_b?:string;
   created_at: string;
 }
@@ -65,4 +65,12 @@ export interface GameState {
   endTime: number | null;
   isGameStarted: boolean;
   isGameCompleted: boolean;
+}
+
+export interface UserProfile {
+  player_name: string;
+  total_steps: number;
+  total_time_seconds: number;
+  last_seen_at: string; // timestamptz 类型会以字符串形式返回
+  created_at: string;
 }
