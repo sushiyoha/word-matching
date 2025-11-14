@@ -24,11 +24,11 @@ export default function CreateLibraryPage() {
   const [uploadMethod, setUploadMethod] = useState<'text' | 'excel'>('text');
   const [isCreating, setIsCreating] = useState(false);
   const [excelLangA, setExcelLangA] = useState('en-US-EricNeural');
-  const [excelLangB, setExcelLangB] = useState('zh-CN-XiaoxiaoNeural');
+  const [excelLangB, setExcelLangB] = useState('zh-CN-XiaoqiuNeural');
   const form = useForm<CreateLibraryForm>({
     defaultValues: {
       langA: 'en-US-EricNeural',
-      langB: 'zh-CN-XiaoxiaoNeural',
+      langB: 'zh-CN-XiaoqiuNeural',
     },
   });
 
@@ -71,7 +71,7 @@ export default function CreateLibraryPage() {
       }
 
       const langA = data.langA; // 完整的语言名称（例如：'en-US-EricNeural'）
-      const langB = data.langB; // 完整的语言名称（例如：'zh-CN-XiaoxiaoNeural'）
+      const langB = data.langB; // 完整的语言名称（例如：'zh-CN-XiaoqiuNeural'）
 
       const results = await Promise.all(
         wordPairsData.map((pair) =>

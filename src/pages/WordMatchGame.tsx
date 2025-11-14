@@ -186,7 +186,7 @@ const WordMatchGame: React.FC = () => {
       const contentKey = `${pair.english_word}|${pair.chinese_translation}`;
       const safePairId = `pair-${contentKey.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}`;
       cards.push({ id: `${safePairId}-en-${index}`, content: pair.english_word, type: 'english', pairId: safePairId, isFlipped: false, isMatched: false, lang: pair.lang_a || 'en-US-EricNeural' });
-      cards.push({ id: `${safePairId}-zh-${index}`, content: pair.chinese_translation, type: 'chinese', pairId: safePairId, isFlipped: false, isMatched: false, lang: pair.lang_b || 'zh-CN-XiaoxiaoNeural' });
+      cards.push({ id: `${safePairId}-zh-${index}`, content: pair.chinese_translation, type: 'chinese', pairId: safePairId, isFlipped: false, isMatched: false, lang: pair.lang_b || 'zh-CN-XiaoqiuNeural' });
     });
     return cards.sort(() => Math.random() - 0.5);
   }, []);

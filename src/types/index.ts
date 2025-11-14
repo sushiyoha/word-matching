@@ -29,7 +29,7 @@ export interface WordPair {
   level_id?: string;
   english_word: string;
   chinese_translation: string;
-  lang_a?:string;//语言A的语言代码，如'zh-CN-XiaoxiaoNeural'
+  lang_a?:string;//语言A的语言代码，如'zh-CN-XiaoqiuNeural'
   lang_b?:string;
   created_at: string;
 }

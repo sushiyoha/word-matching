@@ -288,7 +288,7 @@ export const wordPairApi = {
         english_word: pair.english_word,
         chinese_translation: pair.chinese_translation,
         lang_a: pair.lang_a || 'en-US-EricNeural',
-        lang_b: pair.lang_b || 'zh-CN-XiaoxiaoNeural'
+        lang_b: pair.lang_b || 'zh-CN-XiaoqiuNeural'
       })
       .select()
       .maybeSingle();

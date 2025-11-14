@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS word_pairs (
   english_word text NOT NULL,
   chinese_translation text NOT NULL,
   lang_a text DEFAULT 'en-US-EricNeural',
-  lang_b text DEFAULT 'zh-CN-XiaoxiaoNeural',
+  lang_b text DEFAULT 'zh-CN-XiaoqiuNeural',
   created_at timestamptz DEFAULT now()
 );
 
@@ -139,7 +139,7 @@ SET lang_a = 'en-US-EricNeural'
 WHERE lang_a IS NULL;
 
 UPDATE word_pairs
-SET lang_b = 'zh-CN-XiaoxiaoNeural'
+SET lang_b = 'zh-CN-XiaoqiuNeural'
 WHERE lang_b IS NULL;
 
 
