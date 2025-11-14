@@ -62,36 +62,43 @@
 
 
 // ✨ 我们的新版 TTS 获取器，带有二级缓存功能！✨
+// 
+// ✨ 我们的“智能版” TTS 获取器，拥有自我修复能力！✨
 export const fetchTTS = async (text: string, lang: string) => {
   try {
     const voice = lang || "en-US-EricNeural";
-
-    // 1. ✨ 创建一个独一无二的“口袋钥匙”
     const cacheKey = `tts-audio-url-${voice}-${text}`;
 
-    // 2. ✨ 先检查“口袋”里有没有！
+    // 1. 先检查“口袋”里有没有！
     const cachedUrl = localStorage.getItem(cacheKey);
     if (cachedUrl) {
       console.log("从浏览器缓存中命中！⚡️", text);
       const audio = new Audio(cachedUrl);
-      audio.play().catch(err => console.error("播放缓存音频失败:", err));
-      return; // 直接结束，快如闪电！
+      
+      // ✨ 智能修复魔法 ✨
+      audio.play().catch(err => {
+        console.warn("播放缓存音频失败，可能是链接已失效！", err);
+        // 发现链接是坏的，就把它从缓存里删掉！
+        localStorage.removeItem(cacheKey);
+        console.log("已删除失效的缓存链接，准备重新获取...", text);
+        // 然后重新请求一次，获取新的链接！
+        fetchTTS(text, lang); 
+      });
+      return; // 结束本次执行
     }
 
     console.log("缓存未命中，向服务器请求...", text);
-    // 3. ✨ 口袋里没有，才去麻烦“档案管理员” (后端)
+    // 2. 口袋里没有，才去麻烦“档案管理员” (后端)
     const formData = new FormData();
     formData.append("text", text);
     formData.append("lang", voice);
 
-    // 记得把这里的 URL 换成你最终的 Azure URL 哦！
     const response = await fetch("https://sushiyoha-wordmatching-rg-csadckfuhthwf7cr.eastasia-01.azurewebsites.net/tts/", {
       method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
-      // 如果服务器返回错误，比如 500，我们在这里能看到
       const errorText = await response.text();
       console.error("TTS 接口请求失败:", response.status, response.statusText, errorText);
       return;
@@ -103,11 +110,11 @@ export const fetchTTS = async (text: string, lang: string) => {
       return;
     }
 
-    // 4. ✨ 拿到新地址后，立刻放进“口袋”里，下次就能用了！
+    // 3. 拿到新地址后，放进口袋
     localStorage.setItem(cacheKey, data.url);
     console.log("已将新 URL 存入缓存", text);
 
-    // 5. ✨ 播放语音
+    // 4. 播放新语音
     const audio = new Audio(data.url);
     audio.play().catch(err => console.error("播放新音频失败:", err));
 
@@ -121,7 +128,7 @@ export const fetchTTS = async (text: string, lang: string) => {
 // 完整语言列表
 export const LANGUAGE_CODES = {
   '英语': "en-US-EricNeural",
-  '中文': "zh-CN-XiaoxiaoNeural",
+  '中文': "zh-CN-XiaoqiuNeural",
   '日语': "ja-JP-DaichiNeural",
   '韩语': "ko-KR-BongJinNeural",
   '法语': "fr-FR-AlainNeural",

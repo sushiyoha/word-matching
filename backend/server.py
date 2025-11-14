@@ -35,7 +35,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 VALID_VOICES = [
-    "en-US-EricNeural", "zh-CN-XiaoxiaoNeural", "ja-JP-DaichiNeural", "ko-KR-BongJinNeural",
+    "en-US-EricNeural", "zh-CN-XiaoqiuNeural", "ja-JP-DaichiNeural", "ko-KR-BongJinNeural",
     "fr-FR-AlainNeural", "de-DE-AmalaNeural", "es-ES-NilNeural", "ru-RU-DariyaNeural",
     "it-IT-BenignoNeural", "pt-PT-DuarteNeural", "ar-SA-HamedNeural", "th-TH-AcharaNeural",
     "vi-VN-HoaiMyNeural", "hi-IN-AaravNeural",
