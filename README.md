@@ -1,12 +1,12 @@
 # 悠哈想说：I want to say
 1.大家好！这是悠哈用百度秒哒平台搭建的单词消消乐游戏，是把所有单词卡牌背面朝上打乱顺序后，再进行匹配的消消乐游戏。<br>
 2.总之是一个学习单词的游戏！<br>
-3.它的发音依托浏览器自己的语音合成功能，所以有的浏览器上可能听不到声音噢。<br>
+3.单词有声音，但发音一开始有点慢，多点几次会变快。<br>
 4.都来玩！<br>
 
 Hi! This is a word-matching game made with the assistance of artificial intelligence. <br>
 You can learn English/Chinese/Spanish/...here.<br>
-And its pronunciation is based on the brower's own funciton, so in some of browers we can not hear the pronunciation of the vocabulary.<br>
+The words have sounds effect, but need some time.<br>
 Have fun!<br>
 
 # 怎么体验？How to play
@@ -16,11 +16,7 @@ Have fun!<br>
 # 未来功能 What to wait
 1. 上传书籍/文献/视频/音频，自动解析词书 Extract words from a file and creat a word library （因为看欧美剧、读英文文献的时候总是觉得要是自己背了这上面的词语就好了）<br>
 
-
-
-# 免责声明：底下的内容都素AI生成的，跟yoha无关！You can ignore informations below.
-
-
+# You can ignore informations below.
 ## 🎯 游戏玩法
 
 1. **选择词库**: 从可用词库中选择一个进行游戏
@@ -37,6 +33,7 @@ Have fun!<br>
 - **路由**: React Router
 - **状态管理**: React Hooks
 - **图标**: Lucide React
+- **后端**：Python + Azure
 
 
 ## 目录结构
@@ -73,5 +70,5 @@ Have fun!<br>
 
 ## 技术栈
 
-Vite、TypeScript、React、Supabase
+Vite、TypeScript、React、Supabase、Python
 
