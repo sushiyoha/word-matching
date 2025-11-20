@@ -10,6 +10,7 @@ import TestLibraryManager from './pages/TestLibraryManager';
 import TestGameSettings from './pages/TestGameSettings';
 import TestPublicLibraries from './pages/TestPublicLibraries';
 import type { ReactNode } from 'react';
+import LoginPage from './pages/LoginPage';
 
 interface RouteConfig {
   name: string;
@@ -73,7 +74,12 @@ const routes: RouteConfig[] = [
     name: '测试公共词库',
     path: '/test-public',
     element: <TestPublicLibraries />
-  }
+  },
+  {
+    name: '注册登录',
+    path: '/login',
+    element: <LoginPage />
+  },
 ];
 
 export default routes;

@@ -7,7 +7,7 @@ import { miaodaDevPlugin } from "miaoda-sc-plugin";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/word-matching/',
+  base: '/',
   plugins: [react(), svgr({
       svgrOptions: {
         icon: true, exportType: 'named', namedExport: 'ReactComponent', }, }), miaodaDevPlugin()],

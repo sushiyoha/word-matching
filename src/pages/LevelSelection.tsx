@@ -97,8 +97,8 @@ export default function LevelSelection() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-[420px] mx-auto bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
+      <div className="max-w-[420px] mx-auto space-y-6">
         {/* 头部 */}
         <div className="flex items-center gap-4">
           <Button
@@ -116,12 +116,12 @@ export default function LevelSelection() {
         </div>
 
         {/* 统计信息 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
 
         </div>
 
         {/* 关卡列表 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
           {levels.map((level, index) => {
             const bestRecord = getLevelBestRecord(level.id);
             const isCurrentLevel = level.id === currentLevelId;

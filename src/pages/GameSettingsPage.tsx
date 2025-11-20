@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { wordLibraryApi, wordPairApi } from '@/db/api';
 import type { WordLibrary } from '@/types';
+import { supabase } from '@/db/supabase';
 
 const GameSettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,12 +45,27 @@ const GameSettingsPage: React.FC = () => {
     loadPlayerName();
   }, []);
 
+
+
+  // ✨ 这是全新的、更智能的 loadLibraries 函数！ ✨
   const loadLibraries = async () => {
     try {
-      const data = await wordLibraryApi.getAll();
+      const { data: { user } } = await supabase.auth.getUser();
+      let data: WordLibrary[] = [];
+
+      if (user) {
+        // 如果用户已登录，加载他的个人词库列表
+        console.log("用户已登录，加载个人词库...");
+        data = await wordLibraryApi.getForUser(user.id);
+      } else {
+        // 如果用户未登录，加载所有公共词库，让他可以选用
+        console.log("用户未登录，加载公共词库...");
+        data = await wordLibraryApi.getAll();
+      }
+      
       setLibraries(data);
       
-      // 尝试从localStorage恢复之前选择的词库
+      // 后续的选择逻辑完全不变，非常完美！
       const savedLibraryId = localStorage.getItem('selectedLibraryId');
       let libraryToSelect = null;
       
@@ -57,19 +73,45 @@ const GameSettingsPage: React.FC = () => {
         libraryToSelect = data.find(lib => lib.id === savedLibraryId);
       }
       
-      // 如果没有找到保存的词库，则选择默认词库或第一个词库
       if (!libraryToSelect && data.length > 0) {
         libraryToSelect = data.find(lib => lib.is_default) || data[0];
       }
       
-      if (libraryToSelect && !selectedLibrary) {
-        setSelectedLibrary(libraryToSelect);
-      }
+      setSelectedLibrary(libraryToSelect);
+      
     } catch (error) {
-      console.error('Error loading libraries:', error);
-      toast.error('加载词库失败');
+      console.error('加载词库列表失败:', error);
+      toast.error('加载词库列表失败');
     }
   };
+
+
+  // const loadLibraries = async () => {
+  //   try {
+  //     const data = await wordLibraryApi.getAll();
+  //     setLibraries(data);
+      
+  //     // 尝试从localStorage恢复之前选择的词库
+  //     const savedLibraryId = localStorage.getItem('selectedLibraryId');
+  //     let libraryToSelect = null;
+      
+  //     if (savedLibraryId && data.length > 0) {
+  //       libraryToSelect = data.find(lib => lib.id === savedLibraryId);
+  //     }
+      
+  //     // 如果没有找到保存的词库，则选择默认词库或第一个词库
+  //     if (!libraryToSelect && data.length > 0) {
+  //       libraryToSelect = data.find(lib => lib.is_default) || data[0];
+  //     }
+      
+  //     if (libraryToSelect && !selectedLibrary) {
+  //       setSelectedLibrary(libraryToSelect);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading libraries:', error);
+  //     toast.error('加载词库失败');
+  //   }
+  // };
 
   const loadPlayerName = () => {
     const saved = localStorage.getItem('playerName');

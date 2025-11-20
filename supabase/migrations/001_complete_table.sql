@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS word_pairs (
   english_word text NOT NULL,
   chinese_translation text NOT NULL,
   lang_a text DEFAULT 'en-US-EricNeural',
-  lang_b text DEFAULT 'zh-CN-XiaoqiuNeural',
+  lang_b text DEFAULT 'zh-CN-XiaoxiaoNeural',
   created_at timestamptz DEFAULT now()
 );
 
@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS word_library_levels (
   level_order integer NOT NULL,
   created_at timestamptz DEFAULT now()
 );
-
 
 -- 创建游戏记录表
 CREATE TABLE IF NOT EXISTS game_records (
@@ -139,9 +138,8 @@ SET lang_a = 'en-US-EricNeural'
 WHERE lang_a IS NULL;
 
 UPDATE word_pairs
-SET lang_b = 'zh-CN-XiaoqiuNeural'
+SET lang_b = 'zh-CN-XiaoxiaoNeural'
 WHERE lang_b IS NULL;
-
 
 -- 允许匿名用户上传文件
 CREATE POLICY "Allow public uploads"
@@ -156,6 +154,7 @@ ON storage.objects
 FOR SELECT
 TO public
 USING (bucket_id = 'tts');
+
 
 -- 创建用户档案表（Robin的朋友名册）
 CREATE TABLE IF NOT EXISTS user_profiles (
@@ -175,3 +174,124 @@ returns void as $$
     last_seen_at = now()
   where player_name = p_name;
 $$ language sql;
+
+ALTER TABLE word_pairs
+ALTER COLUMN lang_b SET DEFAULT 'zh-CN-XiaoqiuNeural';
+
+UPDATE word_pairs
+SET lang_b = 'zh-CN-XiaoqiuNeural'
+WHERE lang_b = 'zh-CN-XiaoxiaoNeural';
+
+ALTER TABLE word_libraries
+ADD COLUMN is_public BOOLEAN DEFAULT false,
+ADD COLUMN uploader_id UUID REFERENCES auth.users(id),
+ADD COLUMN forked_from_id UUID REFERENCES word_libraries(id);
+
+CREATE TABLE IF NOT EXISTS user_libraries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  library_id UUID NOT NULL REFERENCES word_libraries(id) ON DELETE CASCADE,
+  added_at TIMESTAMPTZ DEFAULT now(),
+  -- 确保同一个人不能重复添加同一个词库
+  UNIQUE (user_id, library_id)
+);
+
+-- 1. 先给 user_profiles 表添加一个 user_id 列
+ALTER TABLE public.user_profiles
+ADD COLUMN user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- 2. （可选，但推荐）为 user_id 添加唯一约束，确保一个用户只有一个档案
+ALTER TABLE public.user_profiles
+ADD CONSTRAINT user_profiles_user_id_key UNIQUE (user_id);
+
+-- 开启 user_profiles 表的 RLS (行级安全)
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+
+-- 创建规则前，先清理一下可能存在的旧规则（安全起见）
+DROP POLICY IF EXISTS "Users can view their own profile." ON public.user_profiles;
+DROP POLICY IF EXISTS "Users can insert their own profile." ON public.user_profiles;
+DROP POLICY IF EXISTS "Users can update their own profile." ON public.user_profiles;
+
+-- 规则1: 用户可以查看自己的个人档案
+CREATE POLICY "Users can view their own profile."
+ON public.user_profiles FOR SELECT
+USING (auth.uid() = user_id);
+
+-- 规则2: 用户可以为自己创建一个新的个人档案
+CREATE POLICY "Users can insert their own profile."
+ON public.user_profiles FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+-- 规则3: 用户只可以修改自己的个人档案 (这就是解决您当前问题的关键！)
+CREATE POLICY "Users can update their own profile."
+ON public.user_profiles FOR UPDATE
+USING (auth.uid() = user_id);
+
+
+-- 先删除旧的函数
+DROP FUNCTION IF EXISTS update_user_stats(text, int, int);
+
+-- 创建基于 user_id 的新函数
+CREATE OR REPLACE FUNCTION public.update_user_stats_by_id(p_user_id uuid, steps_to_add integer, time_to_add integer)
+ RETURNS void
+ LANGUAGE sql
+AS $function$
+  update user_profiles
+  set
+    total_steps = total_steps + steps_to_add,
+    total_time_seconds = total_time_seconds + time_to_add,
+    last_seen_at = now()
+  where user_id = p_user_id;
+$function$;
+
+
+-- 先删除可能存在的、只认 user_id 的新函数
+DROP FUNCTION IF EXISTS public.update_user_stats_by_id(uuid, integer, integer);
+
+-- 创建回我们之前那个只认 playerName 的函数
+CREATE OR REPLACE FUNCTION public.update_user_stats_by_name(p_name text, steps_to_add integer, time_to_add integer)
+ RETURNS void
+ LANGUAGE sql
+AS $function$
+  update user_profiles
+  set
+    total_steps = total_steps + steps_to_add,
+    total_time_seconds = total_time_seconds + time_to_add,
+    last_seen_at = now()
+  where player_name = p_name;
+$function$;
+
+
+-- 首先，为 word_libraries 表开启行级安全 (如果尚未开启)
+ALTER TABLE public.word_libraries ENABLE ROW LEVEL SECURITY;
+
+-- 为安全起见，先删除可能存在的旧策略
+DROP POLICY IF EXISTS "Public libraries are viewable by everyone." ON public.word_libraries;
+DROP POLICY IF EXISTS "Users can insert their own libraries." ON public.word_libraries;
+DROP POLICY IF EXISTS "Users can update their own libraries." ON public.word_libraries;
+DROP POLICY IF EXISTS "Users can delete their own libraries." ON public.word_libraries;
+
+
+-- ✨ 规则 1: 所有人 (包括游客) 都可以看到被标记为“公共”的书！ ✨
+-- 这是解决您当前问题的核心！
+CREATE POLICY "Public libraries are viewable by everyone."
+ON public.word_libraries FOR SELECT
+USING ( is_public = true );
+
+
+-- ✨ 规则 2: 只有登录的会员才能“捐赠”新书！ ✨
+CREATE POLICY "Users can insert their own libraries."
+ON public.word_libraries FOR INSERT
+WITH CHECK ( auth.role() = 'authenticated' );
+
+
+-- ✨ 规则 3: 只有书的“捐赠者”本人才能修改这本书！ ✨
+CREATE POLICY "Users can update their own libraries."
+ON public.word_libraries FOR UPDATE
+USING ( auth.uid() = uploader_id );
+
+
+-- ✨ 规则 4: 只有书的“捐赠者”本人才能“下架”这本书！ ✨
+CREATE POLICY "Users can delete their own libraries."
+ON public.word_libraries FOR DELETE
+USING ( auth.uid() = uploader_id );
