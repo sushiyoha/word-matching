@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { GameCard } from '@/types';
-import { fetchTTS } from '@/utils/tts';
+//import { fetchTTS } from '@/utils/tts';
 
 interface GameBoardProps {
   cards: GameCard[];
@@ -44,11 +44,11 @@ const GameCardComponent: React.FC<GameCardComponentProps> = ({ card, onClick, di
 
     onClick();
 
-    if (card.lang && card.content) {
-      fetchTTS(card.content, card.lang).catch(err => {
-        console.error('TTS 播放失败:', err);
-      });
-    }
+    // if (card.lang && card.content) {
+    //   fetchTTS(card.content, card.lang).catch(err => {
+    //     console.error('TTS 播放失败:', err);
+    //   });
+    // }
   };
 
   return (
