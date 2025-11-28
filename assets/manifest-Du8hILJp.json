@@ -1,0 +1,10 @@
+{
+    "name": "单词翻翻",
+    "short_name": "单词翻翻",
+    "description": "这是一个考验记忆的单词消除游戏。",
+    "start_url": ".",
+    "display": "standalone", 
+    "background_color": "#ffffff", 
+    "theme_color": "#000000"
+  }
+  
