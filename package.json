@@ -1,6 +1,7 @@
 {
   "name": "word-matching",
   "version": "0.0.1",
+  "homepage": "https://sushiyoha.github.io/word-matching/",
   "type": "module",
   "scripts": {
     "dev": "vite",
