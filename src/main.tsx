@@ -24,7 +24,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  // ✨ 唯一的、最后的魔法就在这里！✨
+  // ✨ 唯一的、最后的魔法就在这里✨
   // ✨ 告诉 React Router，我们的家在 /word-matching！✨
   <BrowserRouter basename="/word-matching">
     <App />
