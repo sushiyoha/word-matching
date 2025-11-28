@@ -33,7 +33,7 @@ const LoginPage: React.FC = () => {
         provider: 'github',
         options: {
           // 👇 这里是我们手动指定的，Supabase 绝对不敢忽略它
-          redirectTo: fixedRedirectUrl,
+          redirectTo: 'https://sushiyoha.github.io/word-matching/'
         },
       });
 
