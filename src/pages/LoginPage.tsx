@@ -13,6 +13,7 @@ const LoginPage: React.FC = () => {
 
   // ✨ 1. 精确计算回家地址
   // 确保 vite.config.ts 里的 base 是 '/word-matching/'
+  
   const redirectUrl = window.location.origin + import.meta.env.BASE_URL;
 
   useEffect(() => {
@@ -25,13 +26,14 @@ const LoginPage: React.FC = () => {
   const handleGithubLogin = async () => {
     try {
       setLoading(true);
-      console.log("正在尝试登录，目标回调地址:", redirectUrl);
+      const fixedRedirectUrl = 'https://sushiyoha.github.io/word-matching'; 
+      console.log("正在尝试登录，强制目标地址:", fixedRedirectUrl);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           // 👇 这里是我们手动指定的，Supabase 绝对不敢忽略它
-          redirectTo: redirectUrl,
+          redirectTo: fixedRedirectUrl,
         },
       });
 
