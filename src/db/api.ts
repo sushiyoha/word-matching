@@ -97,22 +97,20 @@ export const wordLibraryApi = {
     return Array.isArray(data) ? data : [];
   },
 
-    // 获取单个词库详情(2025.12.7新增代码)
-    async getById(id: string): Promise<WordLibrary | null> {
-      const { data, error } = await supabase
-        .from('word_libraries')
-        .select('*')
-        .eq('id', id)
-        .single();
+  // 获取单个词库详情(2025.12.7新增代码)
+  async getById(id: string): Promise<WordLibrary | null> {
+    const { data, error } = await supabase
+      .from('word_libraries')
+      .select('*')
+      .eq('id', id)
+      .single();
       
-      if (error) {
-        console.error('获取词库详情失败:', error);
-        throw error;
-      }
-      return data;
-    },
-
-
+    if (error) {
+      console.error('获取词库详情失败:', error);
+      throw error;
+    }
+    return data;
+  },
 
 
   // (getForUser, create, delete 函数保持不变)
