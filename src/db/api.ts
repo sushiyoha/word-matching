@@ -97,6 +97,24 @@ export const wordLibraryApi = {
     return Array.isArray(data) ? data : [];
   },
 
+    // 获取单个词库详情(2025.12.7新增代码)
+    async getById(id: string): Promise<WordLibrary | null> {
+      const { data, error } = await supabase
+        .from('word_libraries')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error('获取词库详情失败:', error);
+        throw error;
+      }
+      return data;
+    },
+
+
+
+
   // (getForUser, create, delete 函数保持不变)
   async getForUser(userId: string): Promise<WordLibrary[]> {
     if (!userId) return [];
@@ -245,6 +263,39 @@ export const wordPairApi = {
     }
     return data;
   },
+
+    // 更新单词 (2025.12.7新增)
+    async update(id: string, updates: { english_word?: string; chinese_translation?: string }): Promise<WordPair> {
+      const { data, error } = await supabase
+        .from('word_pairs')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating word pair:', error);
+        throw error;
+      }
+      return data;
+    },
+  
+    // 删除单词 (2025.12.7新增)
+    async delete(id: string): Promise<boolean> {
+      const { error } = await supabase
+        .from('word_pairs')
+        .delete()
+        .eq('id', id);
+        
+      if (error) {
+        console.error('Error deleting word pair:', error);
+        throw error;
+      }
+      return true;
+    }
+
+
+  
 };
 
 // =======================================================
