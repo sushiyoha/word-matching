@@ -9,7 +9,7 @@
 - `created_at`: 存储记录的创建时间，使用当前时间戳
 
 ## 2. 完整语音名称：
-- `lang` 字段应存储完整的语音名称，如 `en-US-EricNeural` 或 `zh-CN-XiaoxiaoNeural`，而不是简化的语言代码。
+- `lang` 字段应存储完整的语音名称，如 `en-US-EricNeural`
 */
 
 create table if not exists tts_audio (
