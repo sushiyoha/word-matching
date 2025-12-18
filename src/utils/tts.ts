@@ -119,7 +119,7 @@ export const fetchTTS = async (text: string, lang: string) => {
     formData.append("text", text);
     formData.append("lang", voice);
 
-    const response = await fetch("https://sushiyoha-wordmatching-rg-csadckfuhthwf7cr.eastasia-01.azurewebsites.net/tts/", {
+    const response = await fetch("https://word-matching-fpaxb9a3duh8f3dp.eastasia-01.azurewebsites.net/tts/", {
       method: "POST",
       body: formData,
     });
