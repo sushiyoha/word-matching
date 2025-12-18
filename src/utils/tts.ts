@@ -62,7 +62,7 @@ export const fetchTTS = async (text: string, lang: string) => {
 // 完整语言列表
 export const LANGUAGE_CODES = {
   '英语': "en-US-EricNeural",
-  '中文': "zh-CN-XiaoqiuNeural",
+  '中文': "zh-CN-YunxiNeural",
   '日语': "ja-JP-DaichiNeural",
   '韩语': "ko-KR-BongJinNeural",
   '法语': "fr-FR-AlainNeural",

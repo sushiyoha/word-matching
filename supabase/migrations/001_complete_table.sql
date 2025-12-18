@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS word_pairs (
   english_word text NOT NULL,
   chinese_translation text NOT NULL,
   lang_a text DEFAULT 'en-US-EricNeural',
-  lang_b text DEFAULT 'zh-CN-XiaoxiaoNeural',
+  lang_b text DEFAULT 'zh-CN-YunxiNeural',
   created_at timestamptz DEFAULT now()
 );
 
@@ -138,7 +138,7 @@ SET lang_a = 'en-US-EricNeural'
 WHERE lang_a IS NULL;
 
 UPDATE word_pairs
-SET lang_b = 'zh-CN-XiaoxiaoNeural'
+SET lang_b = 'zh-CN-YunxiNeural'
 WHERE lang_b IS NULL;
 
 -- 允许匿名用户上传文件
@@ -176,11 +176,11 @@ returns void as $$
 $$ language sql;
 
 ALTER TABLE word_pairs
-ALTER COLUMN lang_b SET DEFAULT 'zh-CN-XiaoqiuNeural';
+ALTER COLUMN lang_b SET DEFAULT 'zh-CN-YunxiNeural';
 
 UPDATE word_pairs
 SET lang_b = 'zh-CN-XiaoqiuNeural'
-WHERE lang_b = 'zh-CN-XiaoxiaoNeural';
+WHERE lang_b = 'zh-CN-YunxiNeural';
 
 ALTER TABLE word_libraries
 ADD COLUMN is_public BOOLEAN DEFAULT false,

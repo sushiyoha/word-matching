@@ -251,7 +251,7 @@ export const wordPairApi = {
         ...pair,
         level_id: pair.level_id || null,
         lang_a: pair.lang_a || 'en-US-EricNeural',
-        lang_b: pair.lang_b || 'zh-CN-XiaoqiuNeural'
+        lang_b: pair.lang_b || 'zh-CN-YunxiNeural'
       })
       .select()
       .single();

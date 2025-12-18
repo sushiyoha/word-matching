@@ -27,11 +27,11 @@ export default function CreateLibraryPage() {
   const [uploadMethod, setUploadMethod] = useState<'text' | 'excel'>('text');
   const [isCreating, setIsCreating] = useState(false);
   const [excelLangA, setExcelLangA] = useState('en-US-EricNeural');
-  const [excelLangB, setExcelLangB] = useState('zh-CN-XiaoqiuNeural');
+  const [excelLangB, setExcelLangB] = useState('zh-CN-YunxiNeural');
   const form = useForm<CreateLibraryForm>({
     defaultValues: {
       langA: 'en-US-EricNeural',
-      langB: 'zh-CN-XiaoqiuNeural',
+      langB: 'zh-CN-YunxiNeural',
     },
   });
 

@@ -12,7 +12,7 @@
 -- 添加语言字段（如果没有的话）
 ALTER TABLE word_pairs
 ADD COLUMN IF NOT EXISTS lang_a text DEFAULT 'en-US-EricNeural',
-ADD COLUMN IF NOT EXISTS lang_b text DEFAULT 'zh-CN-XiaoxiaoNeural';
+ADD COLUMN IF NOT EXISTS lang_b text DEFAULT 'zh-CN-YunxiNeural';
 
 -- 为现有数据设置默认语言名称（如果字段为空）
 UPDATE word_pairs
@@ -20,5 +20,5 @@ SET lang_a = 'en-US-EricNeural'
 WHERE lang_a IS NULL;
 
 UPDATE word_pairs
-SET lang_b = 'zh-CN-XiaoxiaoNeural'
+SET lang_b = 'zh-CN-YunxiNeural'
 WHERE lang_b IS NULL;
