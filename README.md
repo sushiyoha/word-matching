@@ -11,7 +11,7 @@ Have fun!<br>
 
 # 怎么体验？How to play
 请直接点击这个链接，然后稍作等待（因为数据库调用好慢啊）！ <br>Click this!<br>
- [https://sushiyoha.github.io/Wordie-Cardie/](https://sushiyoha.github.io/word-matching/)
+https://sushiyoha.github.io/word-matching/
 
 # 未来功能 What to wait
 1. 上传书籍/文献/视频/音频，自动解析词书 Extract words from a file and creat a word library （因为看欧美剧、读英文文献的时候总是觉得要是自己背了这上面的词语就好了）<br>
